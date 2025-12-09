@@ -1,5 +1,7 @@
 import logging
 import pandas as pd
+from typing import Optional
+
 from .provider import DataProvider, YahooDataProvider
 from .cache import DataCache
 
@@ -9,7 +11,7 @@ class DataRepository:
     Orchestrates data fetching and caching.
     """
     
-    def __init__(self, provider: DataProvider = None, cache: DataCache = None):
+    def __init__(self, provider: Optional[DataProvider] = None, cache: Optional[DataCache] = None):
         self.provider = provider or YahooDataProvider()
         self.cache = cache or DataCache()
         self.logger = logging.getLogger(__name__)

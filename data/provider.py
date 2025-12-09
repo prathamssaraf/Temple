@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import yfinance as yf
 import pandas as pd
@@ -10,7 +11,7 @@ class DataProvider(ABC):
     """Abstract base class for data providers."""
 
     @abstractmethod
-    def fetch_ohlcv(self, symbol: str, start_date: str = None, end_date: str = None, period: str = "2y") -> pd.DataFrame:
+    def fetch_ohlcv(self, symbol: str, start_date: Optional[str] = None, end_date: Optional[str] = None, period: str = "2y") -> pd.DataFrame:
         """
         Fetch OHLCV data for a symbol.
         
@@ -45,7 +46,7 @@ class YahooDataProvider(DataProvider):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    def fetch_ohlcv(self, symbol: str, start_date: str = None, end_date: str = None, period: str = "2y") -> pd.DataFrame:
+    def fetch_ohlcv(self, symbol: str, start_date: Optional[str] = None, end_date: Optional[str] = None, period: str = "2y") -> pd.DataFrame:
         """Fetch OHLCV data using yfinance."""
         self.logger.info(f"Fetching OHLCV for {symbol} (Period: {period}, Start: {start_date}, End: {end_date})")
         

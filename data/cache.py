@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import logging
 from pathlib import Path
+from typing import Optional
 
 class DataCache:
     """Local file-based cache for stock data."""
@@ -37,7 +38,7 @@ class DataCache:
         age = datetime.now() - file_mtime
         return age < ttl
 
-    def get_ohlcv(self, symbol: str) -> pd.DataFrame:
+    def get_ohlcv(self, symbol: str) -> Optional[pd.DataFrame]:
         """Retrieve OHLCV data from cache if valid."""
         filepath = self.ohlcv_dir / f"{symbol}.csv"
         
@@ -64,7 +65,7 @@ class DataCache:
         except Exception as e:
             self.logger.error(f"Error saving OHLCV cache for {symbol}: {e}")
 
-    def get_fundamentals(self, symbol: str) -> dict:
+    def get_fundamentals(self, symbol: str) -> Optional[dict]:
         """Retrieve fundamental data from cache if valid."""
         filepath = self.fundamentals_dir / f"{symbol}.json"
         
