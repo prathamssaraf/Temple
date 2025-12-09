@@ -7,8 +7,8 @@
 This is the web-based dashboard for Temple, providing an intuitive interface for:
 - **Pattern Builder**: Visually create temporal patterns without code
 - **Scanner**: Find stocks matching your patterns across markets
-- **Watchlists**: Monitor specific stocks for pattern occurrences
-- **Analytics**: View pattern performance and confidence scores
+- **Dashboard**: Monitor pattern performance and market insights
+- **Analytics**: View pattern confidence scores and historical data
 
 ## Tech Stack
 
@@ -16,7 +16,7 @@ This is the web-based dashboard for Temple, providing an intuitive interface for
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first styling
 - **Vite** - Fast build tool
-- **Lucide React** - Beautiful icons
+- **Temple REST API** - Backend integration
 
 ## Features
 
@@ -105,21 +105,48 @@ frontend/
 
 ## Integration with Backend
 
-The dashboard communicates with the Python backend (patterns + scanner layers) via REST API:
+The dashboard communicates with the Temple REST API:
 
 ```
-Frontend (React)  ←→  Backend API (FastAPI/Flask)  ←→  Temple (Python)
-                       └── /api/patterns
-                       └── /api/scan
-                       └── /api/stocks
+Frontend (React) ←→ Temple REST API (FastAPI) ←→ Temple Components
+                    └── /api/v1/patterns/match
+                    └── /api/v1/patterns/examples
+                    └── /api/v1/scanner/scan
+                    └── /api/v1/scanner/universes
 ```
 
-API endpoints (to be implemented in backend):
-- `GET /api/patterns` - List saved patterns
-- `POST /api/patterns` - Create new pattern
-- `POST /api/scan` - Run pattern scan
-- `GET /api/stocks/{symbol}/data` - Get OHLCV data
-- `POST /api/patterns/test` - Test pattern on stock
+### API Configuration
+
+Set the API URL in `.env`:
+
+```bash
+VITE_API_URL=http://localhost:8000
+```
+
+### API Endpoints
+
+- `POST /api/v1/patterns/match` - Match pattern against a stock
+- `GET /api/v1/patterns/examples` - Get example patterns
+- `POST /api/v1/scanner/scan` - Scan multiple stocks or universes
+- `GET /api/v1/scanner/universes` - List available stock universes
+- `GET /api/v1/scanner/health` - Check API health
+
+### Running with Backend
+
+1. Start the backend API:
+   ```bash
+   python -m uvicorn api.main:app --reload
+   ```
+
+2. Start the frontend:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+
+3. Access the dashboard at `http://localhost:5173`
+
+The frontend will automatically connect to the API and fetch real data.
 
 ## Customization
 
@@ -157,12 +184,38 @@ Animations are defined in `tailwind.config.js` and `index.css`. Keep existing on
 - [ ] Dark/light theme toggle
 - [ ] Export reports to PDF
 
+## API Service Layer
+
+The frontend includes TypeScript services for API integration:
+
+- `services/templeApi.ts` - Main API service class
+- `hooks/useTempleApi.ts` - React hooks for API calls
+- `types/api.ts` - TypeScript types for API requests/responses
+
+### Example Usage
+
+```typescript
+import { usePatternMatch, useScanStocks } from './hooks/useTempleApi';
+
+function MyComponent() {
+  const { data, loading, matchPattern } = usePatternMatch();
+  const { scanStocks } = useScanStocks();
+
+  // Match a pattern
+  await matchPattern('AAPL', myPattern, 365);
+
+  // Scan stocks
+  await scanStocks({ symbols: ['AAPL', 'MSFT'] }, myPattern, 0.7);
+}
+```
+
 ## Notes
 
-- Currently runs standalone with mock data
-- Backend integration pending (scanner + API layer)
-- Charts will use real data once backend is connected
-- Pattern builder generates JSON definitions compatible with Temple's schema
+- Fully integrated with Temple REST API
+- Real-time data from backend when API is running
+- Falls back to mock mode when API is unavailable
+- Pattern definitions compatible with Temple's schema
+- TypeScript ensures type safety across API boundaries
 
 ---
 

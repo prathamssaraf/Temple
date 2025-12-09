@@ -1,8 +1,8 @@
 import React from 'react';
 
 interface NavbarProps {
-    activeView: 'dashboard' | 'builder' | 'profile';
-    onNavigate: (view: 'dashboard' | 'builder' | 'profile') => void;
+    activeView: 'dashboard' | 'builder' | 'scanner' | 'profile';
+    onNavigate: (view: 'dashboard' | 'builder' | 'scanner' | 'profile') => void;
 }
 
 export function Navbar({ activeView, onNavigate }: NavbarProps) {
@@ -37,6 +37,15 @@ export function Navbar({ activeView, onNavigate }: NavbarProps) {
                         }`}
                 >
                     Builder
+                </button>
+                <button
+                    onClick={() => onNavigate('scanner')}
+                    className={`px-6 py-1.5 rounded-full text-sm font-medium transition-all duration-300 ${activeView === 'scanner'
+                        ? 'bg-surface text-white shadow-lg shadow-black/20'
+                        : 'text-gray-400 hover:text-white'
+                        }`}
+                >
+                    Scanner
                 </button>
             </div>
 

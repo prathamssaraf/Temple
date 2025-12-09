@@ -4,8 +4,9 @@ import { DashboardView } from './components/dashboard/DashboardView';
 import { BuilderView } from './components/builder/BuilderView';
 import { ProfileView } from './components/profile/ProfileView';
 import { PatternDetailView } from './components/dashboard/PatternDetailView';
+import ScannerView from './components/scanner/ScannerView';
 
-type View = 'dashboard' | 'builder' | 'profile' | 'detail';
+type View = 'dashboard' | 'builder' | 'profile' | 'detail' | 'scanner';
 
 function App() {
     const [activeView, setActiveView] = useState<View>('dashboard');
@@ -31,6 +32,9 @@ function App() {
                     )}
                     {activeView === 'builder' && (
                         <BuilderView />
+                    )}
+                    {activeView === 'scanner' && (
+                        <ScannerView />
                     )}
                     {activeView === 'profile' && (
                         <ProfileView />
