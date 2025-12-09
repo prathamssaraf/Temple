@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Global Styles */
+body {
+    background-color: #030303;
+    color: white;
+    font-weight: 500;
+    /* Increased from default 400 */
+    overflow-x: hidden;
+    @apply antialiased font-sans selection:bg-accent selection:text-black;
+}
+
+/* Glassmorphism Sidebar */
+.glass-sidebar {
+    background: rgba(9, 9, 11, 0.6);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid rgba(39, 39, 42, 0.5);
+}
+
+/* Beam Animation */
+.beam-line {
+    background: linear-gradient(to bottom, transparent, #10b981, transparent);
+    opacity: 0.5;
+    animation: beamPulse 2s ease-in-out infinite;
+}
+
+@keyframes beamPulse {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        height: 40%;
+        top: 0%;
+    }
+
+    50% {
+        opacity: 1;
+        height: 60%;
+        top: 20%;
+    }
+}
+
+/* Flashlight Effect */
+.flashlight-row {
+    transition: background 0.1s;
+}
+
+.flashlight-row:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Text Utilities */
+.tracking-ultra-wide {
+    letter-spacing: 0.2em;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #030303;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #27272a;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46;
+}
+
+/* Horizontal Beam Animation (Global for Robustness) */
+@keyframes slideRight {
+    0% {
+        left: 0;
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        left: 100%;
+        opacity: 0;
+    }
+}
+
+.animate-beam-flow {
+    animation: slideRight 2s ease-in-out infinite;
+}
