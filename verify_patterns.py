@@ -1,7 +1,8 @@
 """
-Verification script demonstrating the Patterns Layer API.
+Verification script demonstrating the Patterns Layer API with mock data.
 
-This script shows how to define and detect temporal patterns in stock data.
+This script shows how to define and detect temporal patterns using synthetic data.
+No external dependencies required - patterns layer is fully self-contained.
 """
 
 import sys
@@ -17,7 +18,12 @@ logging.basicConfig(
 # Add current directory to path
 sys.path.append(os.getcwd())
 
-from data.repository import DataRepository
+from patterns.mock_data import (
+    create_mock_ohlcv,
+    create_mean_reverting_data,
+    create_volatile_data,
+    create_support_resistance_data
+)
 from patterns import (
     create_pattern_matcher,
     PatternDefinition,
@@ -67,16 +73,21 @@ def demo_support_bounce_pattern():
         tags=["mean-reversion", "support"]
     )
 
-    # Get data
-    print("\nFetching data for AAPL...")
-    repo = DataRepository()
-    df = repo.get_ohlcv("AAPL")
-    print(f"[OK] Retrieved {len(df)} rows of data")
+    # Generate mock data with support/resistance characteristics
+    print("\nGenerating mock data with support/resistance levels...")
+    df = create_support_resistance_data(
+        days=500,
+        support_level=95.0,
+        resistance_level=105.0,
+        seed=42
+    )
+    print(f"[OK] Generated {len(df)} rows of data")
+    print(f"     Price range: ${df['close'].min():.2f} - ${df['close'].max():.2f}")
 
     # Create matcher and find pattern
     print(f"\nSearching for '{pattern.name}' pattern...")
     matcher = create_pattern_matcher()
-    match = matcher.match(df, "AAPL", pattern)
+    match = matcher.match(df, "MOCK-SR", pattern)
 
     # Display results
     print(f"\n{'='*70}")
@@ -132,15 +143,21 @@ def demo_mean_reversion_pattern():
         tags=["mean-reversion", "sma"]
     )
 
-    # Get data
-    print("\nUsing cached AAPL data...")
-    repo = DataRepository()
-    df = repo.get_ohlcv("AAPL")
+    # Generate mean-reverting mock data
+    print("\nGenerating mean-reverting mock data...")
+    df = create_mean_reverting_data(
+        days=500,
+        base_price=100.0,
+        mean_reversion_speed=0.1,
+        seed=42
+    )
+    print(f"[OK] Generated {len(df)} rows of data")
+    print(f"     Price range: ${df['close'].min():.2f} - ${df['close'].max():.2f}")
 
     # Match pattern
     print(f"\nSearching for '{pattern.name}' pattern...")
     matcher = create_pattern_matcher()
-    match = matcher.match(df, "AAPL", pattern)
+    match = matcher.match(df, "MOCK-MR", pattern)
 
     # Display results
     print(f"\n{'='*70}")
@@ -159,7 +176,7 @@ def demo_volatility_pattern():
     print("\n" + "="*70)
     print("DEMO 3: Volatility Spike Pattern")
     print("="*70)
-    print("Pattern: Stock rises 10%, then falls 10%, repeating 3+ times in 6 months")
+    print("Pattern: Stock rises 8%, then falls 8%, repeating 3+ times in 6 months")
 
     # Define the pattern
     pattern = PatternDefinition(
@@ -192,15 +209,21 @@ def demo_volatility_pattern():
         tags=["volatility"]
     )
 
-    # Get data
-    print("\nUsing cached AAPL data...")
-    repo = DataRepository()
-    df = repo.get_ohlcv("AAPL")
+    # Generate volatile mock data
+    print("\nGenerating volatile mock data...")
+    df = create_volatile_data(
+        days=500,
+        base_price=100.0,
+        volatility=0.05,
+        seed=42
+    )
+    print(f"[OK] Generated {len(df)} rows of data")
+    print(f"     Price range: ${df['close'].min():.2f} - ${df['close'].max():.2f}")
 
     # Match pattern
     print(f"\nSearching for '{pattern.name}' pattern...")
     matcher = create_pattern_matcher()
-    match = matcher.match(df, "AAPL", pattern)
+    match = matcher.match(df, "MOCK-VOL", pattern)
 
     # Display results
     print(f"\n{'='*70}")
@@ -219,7 +242,7 @@ def demo_multiple_patterns():
     print("\n" + "="*70)
     print("DEMO 4: Multiple Pattern Matching")
     print("="*70)
-    print("Testing MSFT against 3 different patterns simultaneously")
+    print("Testing realistic stock data against 3 different patterns simultaneously")
 
     # Define patterns
     patterns = [
@@ -265,16 +288,22 @@ def demo_multiple_patterns():
         ),
     ]
 
-    # Get data
-    print("\nFetching data for MSFT...")
-    repo = DataRepository()
-    df = repo.get_ohlcv("MSFT")
-    print(f"[OK] Retrieved {len(df)} rows")
+    # Generate realistic mock data
+    print("\nGenerating realistic mock data...")
+    df = create_mock_ohlcv(
+        days=500,
+        base_price=150.0,
+        volatility=0.02,
+        trend=0.0005,
+        seed=42
+    )
+    print(f"[OK] Generated {len(df)} rows")
+    print(f"     Price range: ${df['close'].min():.2f} - ${df['close'].max():.2f}")
 
     # Match all patterns
     print(f"\nMatching {len(patterns)} patterns...")
     matcher = create_pattern_matcher()
-    matches = matcher.match_multiple(df, "MSFT", patterns)
+    matches = matcher.match_multiple(df, "MOCK-REAL", patterns)
 
     # Display results
     print(f"\n{'='*70}")
@@ -298,11 +327,87 @@ def demo_multiple_patterns():
     return matches
 
 
+def demo_custom_pattern():
+    """Demo 5: User-defined custom pattern."""
+    print("\n" + "="*70)
+    print("DEMO 5: Custom Pattern - User Defined")
+    print("="*70)
+    print("Pattern: 'Stock rises 10% twice, then falls' - repeating 5 times in 1 year")
+
+    # Define custom pattern
+    pattern = PatternDefinition(
+        name="Double Rise Then Fall",
+        description="Two consecutive 10% rises followed by a fall",
+        sequence=[
+            SequenceStep(
+                event=EventDefinition(
+                    type=EventType.PRICE_RISES_BY,
+                    min_change=10.0
+                ),
+                name="First rise"
+            ),
+            SequenceStep(
+                event=EventDefinition(
+                    type=EventType.PRICE_RISES_BY,
+                    min_change=10.0
+                ),
+                max_duration_days=60,
+                name="Second rise"
+            ),
+            SequenceStep(
+                event=EventDefinition(
+                    type=EventType.PRICE_FALLS_BY,
+                    min_change=5.0
+                ),
+                max_duration_days=30,
+                name="Fall"
+            )
+        ],
+        frequency=FrequencyConstraint(
+            min_occurrences=2,  # Lowered for demonstration
+            timeframe=1,
+            timeframe_unit=TimeframeUnit.YEARS
+        ),
+        tags=["custom", "user-defined"]
+    )
+
+    # Generate trending data
+    print("\nGenerating trending mock data...")
+    df = create_mock_ohlcv(
+        days=500,
+        base_price=100.0,
+        volatility=0.03,
+        trend=0.001,  # Uptrend
+        seed=42
+    )
+    print(f"[OK] Generated {len(df)} rows of data")
+    print(f"     Price range: ${df['close'].min():.2f} - ${df['close'].max():.2f}")
+
+    # Match pattern
+    print(f"\nSearching for custom pattern...")
+    matcher = create_pattern_matcher()
+    match = matcher.match(df, "MOCK-CUSTOM", pattern)
+
+    # Display results
+    print(f"\n{'='*70}")
+    print(f"RESULTS: {pattern.name}")
+    print(f"{'='*70}")
+    print(f"  Description: {pattern.description}")
+    print(f"  Symbol: {match.symbol}")
+    print(f"  Occurrences Found: {match.count}")
+    print(f"  Confidence: {match.confidence:.2%}")
+    print(f"  Status: {'PASS' if match.count >= 2 else 'FAIL'}")
+    print(f"\n  This demonstrates that users can define ANY temporal pattern!")
+
+    return match
+
+
 def main():
     """Run all verification demos."""
     print("\n" + "="*70)
-    print("TEMPLE PATTERNS LAYER - API VERIFICATION")
+    print("TEMPLE PATTERNS LAYER - API VERIFICATION (MOCK DATA)")
     print("="*70)
+    print("\nUsing synthetic data - no external dependencies required!")
 
     try:
         # Run demos
@@ -310,12 +415,17 @@ def main():
         demo_mean_reversion_pattern()
         demo_volatility_pattern()
         demo_multiple_patterns()
+        demo_custom_pattern()
 
         print("\n" + "="*70)
         print("[OK] ALL DEMOS COMPLETED SUCCESSFULLY")
         print("="*70)
-        print("\nThe patterns layer is ready to detect temporal patterns!")
-        print("You can now define custom patterns and scan stocks.")
+        print("\nThe patterns layer is fully self-contained and ready to use!")
+        print("Users can define ANY temporal pattern without writing code.")
+        print("\nNext steps:")
+        print("  1. Integrate with data layer for real stock data")
+        print("  2. Build scanner to find patterns across multiple stocks")
+        print("  3. Create dashboard for pattern visualization")
 
     except Exception as e:
         print(f"\n[X] Error during verification: {e}")

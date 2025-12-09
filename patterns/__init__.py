@@ -94,6 +94,15 @@ from .indicators import Indicators, calculate_all_indicators
 from .events import EventDetector
 from .sequences import SequenceMatcher, match_multiple_patterns
 
+# Public API - Mock Data (for testing without data layer)
+from .mock_data import (
+    create_mock_ohlcv,
+    create_mean_reverting_data,
+    create_volatile_data,
+    create_trending_data,
+    create_support_resistance_data
+)
+
 # Public API - Factory (recommended entry point)
 from .factory import (
     PatternsFactory,
@@ -123,6 +132,12 @@ __all__ = [
     "EventDetector",
     "SequenceMatcher",
     "match_multiple_patterns",
+    # Mock data
+    "create_mock_ohlcv",
+    "create_mean_reverting_data",
+    "create_volatile_data",
+    "create_trending_data",
+    "create_support_resistance_data",
     # Factory (recommended)
     "PatternsFactory",
     "create_pattern_matcher",
