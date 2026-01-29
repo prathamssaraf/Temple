@@ -21,6 +21,8 @@ class EventType(Enum):
     INDICATOR_CROSSES_BELOW = "indicator_crosses_below"
     INDICATOR_EQUALS = "indicator_equals"
     VOLUME_SPIKE = "volume_spike"
+    PIVOT_DEVIATION = "pivot_deviation"  # Price moves >X% away from pivot
+    PIVOT_RETURN = "pivot_return"  # Price returns within tolerance of pivot
 
 
 class Operator(Enum):
@@ -50,8 +52,11 @@ class ReferenceLevel:
         - Fixed price: ReferenceLevel(type="fixed", value=150.0)
         - Moving average: ReferenceLevel(type="sma", period=20)
         - Support/resistance: ReferenceLevel(type="support", lookback=90)
+        - Pivot (mode): ReferenceLevel(type="pivot_mode", lookback=365)
+        - Pivot (median): ReferenceLevel(type="pivot_median", lookback=365)
+        - Pivot (volume): ReferenceLevel(type="pivot_volume", lookback=365)
     """
-    type: str  # "fixed", "sma", "ema", "support", "resistance", "vwap"
+    type: str  # "fixed", "sma", "ema", "support", "resistance", "vwap", "pivot_mode", "pivot_median", "pivot_volume"
     value: Optional[float] = None
     period: Optional[int] = None
     lookback: Optional[int] = None

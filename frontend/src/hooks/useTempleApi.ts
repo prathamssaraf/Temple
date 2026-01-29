@@ -66,7 +66,8 @@ export function useScanStocks() {
       symbolsOrUniverse: { symbols?: string[]; universe?: string },
       pattern: PatternDefinition,
       minConfidence: number = 0.7,
-      parallel: boolean = true
+      parallel: boolean = true,
+      lookbackDays: number = 365
     ) => {
       setState({ data: null, loading: true, error: null });
 
@@ -76,6 +77,7 @@ export function useScanStocks() {
           pattern,
           min_confidence: minConfidence,
           parallel,
+          lookback_days: lookbackDays,
         });
         setState({ data: result, loading: false, error: null });
         return result;

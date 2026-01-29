@@ -231,6 +231,104 @@ class Indicators:
         avg_volume = volume.rolling(window=period, min_periods=period).mean()
         return volume / avg_volume
 
+    @staticmethod
+    def pivot_mode(close: pd.Series, lookback: int = 365, bin_size: float = 0.5) -> Optional[float]:
+        """
+        Find the most frequent price level (mode) as pivot point.
+
+        Args:
+            close: Close price series
+            lookback: Number of days to look back
+            bin_size: Percentage bin size for grouping prices (e.g., 0.5 = 0.5% bins)
+
+        Returns:
+            Most frequent price level or None
+        """
+        recent_data = close.tail(lookback)
+
+        if len(recent_data) < 10:
+            return None
+
+        # Create price bins
+        min_price = recent_data.min()
+        max_price = recent_data.max()
+        bin_width = (max_price - min_price) * (bin_size / 100.0)
+
+        if bin_width == 0:
+            return recent_data.median()
+
+        # Count occurrences in each bin
+        bins = np.arange(min_price, max_price + bin_width, bin_width)
+        hist, bin_edges = np.histogram(recent_data, bins=bins)
+
+        # Find bin with most occurrences
+        max_bin_index = hist.argmax()
+        pivot = (bin_edges[max_bin_index] + bin_edges[max_bin_index + 1]) / 2
+
+        return float(pivot)
+
+    @staticmethod
+    def pivot_median(close: pd.Series, lookback: int = 365) -> Optional[float]:
+        """
+        Calculate median price as pivot point.
+
+        Args:
+            close: Close price series
+            lookback: Number of days to look back
+
+        Returns:
+            Median price or None
+        """
+        recent_data = close.tail(lookback)
+
+        if len(recent_data) < 10:
+            return None
+
+        return float(recent_data.median())
+
+    @staticmethod
+    def pivot_volume_weighted(close: pd.Series, volume: pd.Series, lookback: int = 365) -> Optional[float]:
+        """
+        Calculate volume-weighted pivot point (price with most volume concentration).
+
+        Args:
+            close: Close price series
+            volume: Volume series
+            lookback: Number of days to look back
+
+        Returns:
+            Volume-weighted pivot price or None
+        """
+        recent_close = close.tail(lookback)
+        recent_volume = volume.tail(lookback)
+
+        if len(recent_close) < 10:
+            return None
+
+        # Calculate VWAP-like metric but looking for concentration
+        # Group prices into bins and sum volume in each bin
+        min_price = recent_close.min()
+        max_price = recent_close.max()
+        bin_width = (max_price - min_price) * 0.005  # 0.5% bins
+
+        if bin_width == 0:
+            return float(recent_close.median())
+
+        bins = np.arange(min_price, max_price + bin_width, bin_width)
+
+        # Sum volume in each price bin
+        volume_by_price = np.zeros(len(bins) - 1)
+        for price, vol in zip(recent_close, recent_volume):
+            bin_idx = int((price - min_price) / bin_width)
+            if 0 <= bin_idx < len(volume_by_price):
+                volume_by_price[bin_idx] += vol
+
+        # Find bin with highest volume
+        max_volume_bin = volume_by_price.argmax()
+        pivot = (bins[max_volume_bin] + bins[max_volume_bin + 1]) / 2
+
+        return float(pivot)
+
 
 def calculate_all_indicators(df: pd.DataFrame) -> pd.DataFrame:
     """

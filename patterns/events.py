@@ -78,6 +78,15 @@ class EventDetector:
             vwap = Indicators.vwap(self.high, self.low, self.close, self.volume)
             return vwap.iloc[index] if index is not None else vwap
 
+        elif reference.type == "pivot_mode":
+            return Indicators.pivot_mode(self.close, lookback=reference.lookback or 365)
+
+        elif reference.type == "pivot_median":
+            return Indicators.pivot_median(self.close, lookback=reference.lookback or 365)
+
+        elif reference.type == "pivot_volume":
+            return Indicators.pivot_volume_weighted(self.close, self.volume, lookback=reference.lookback or 365)
+
         else:
             logger.warning(f"Unknown reference type: {reference.type}")
             return None
@@ -278,6 +287,109 @@ class EventDetector:
 
         return events
 
+    def detect_pivot_deviation(self, event: EventDefinition) -> List[Dict[str, Any]]:
+        """
+        Detect when price deviates significantly from pivot point.
+
+        A deviation occurs when price moves more than tolerance% away from the pivot.
+        Default tolerance is 5%.
+
+        Args:
+            event: Event definition with reference to pivot and tolerance
+
+        Returns:
+            List of deviation events
+        """
+        events = []
+        pivot = self.get_reference_value(event.reference)
+
+        if pivot is None:
+            logger.warning("Could not calculate pivot point for deviation detection")
+            return events
+
+        tolerance_pct = event.tolerance / 100.0  # Convert to decimal (5% -> 0.05)
+        deviation_threshold = pivot * tolerance_pct
+
+        # Track if we're currently in a deviation state
+        in_deviation = False
+        deviation_start_idx = None
+
+        for i in range(len(self.close)):
+            price = self.close.iloc[i]
+            distance_from_pivot = abs(price - pivot)
+
+            # Check if price has deviated beyond threshold
+            if distance_from_pivot > deviation_threshold:
+                if not in_deviation:
+                    # Start of a new deviation
+                    in_deviation = True
+                    deviation_start_idx = i
+
+                    deviation_pct = ((price - pivot) / pivot) * 100
+                    events.append({
+                        'date': self.df.index[i],
+                        'price': price,
+                        'pivot': pivot,
+                        'deviation_pct': deviation_pct,
+                        'direction': 'above' if price > pivot else 'below',
+                        'type': 'pivot_deviation'
+                    })
+            else:
+                # Price is within tolerance
+                if in_deviation:
+                    in_deviation = False
+
+        logger.info(f"Found {len(events)} pivot deviations (pivot={pivot:.2f}, tolerance={event.tolerance}%)")
+        return events
+
+    def detect_pivot_return(self, event: EventDefinition) -> List[Dict[str, Any]]:
+        """
+        Detect when price returns to within tolerance of pivot after deviation.
+
+        A return occurs when price comes back within tolerance% of the pivot.
+        Default tolerance is 5%.
+
+        Args:
+            event: Event definition with reference to pivot and tolerance
+
+        Returns:
+            List of return events
+        """
+        events = []
+        pivot = self.get_reference_value(event.reference)
+
+        if pivot is None:
+            logger.warning("Could not calculate pivot point for return detection")
+            return events
+
+        tolerance_pct = event.tolerance / 100.0
+        lower_bound = pivot * (1 - tolerance_pct)
+        upper_bound = pivot * (1 + tolerance_pct)
+
+        # Track state: are we outside or inside the pivot zone?
+        outside_pivot = False
+
+        for i in range(len(self.close)):
+            price = self.close.iloc[i]
+            within_tolerance = lower_bound <= price <= upper_bound
+
+            if not within_tolerance:
+                # We're outside the pivot zone
+                outside_pivot = True
+            elif outside_pivot and within_tolerance:
+                # We were outside, now we're back inside = return event
+                events.append({
+                    'date': self.df.index[i],
+                    'price': price,
+                    'pivot': pivot,
+                    'distance_pct': abs((price - pivot) / pivot) * 100,
+                    'type': 'pivot_return'
+                })
+                outside_pivot = False
+
+        logger.info(f"Found {len(events)} pivot returns (pivot={pivot:.2f}, tolerance={event.tolerance}%)")
+        return events
+
     def detect_event(self, event: EventDefinition) -> List[Dict[str, Any]]:
         """
         Main method to detect any event type.
@@ -302,6 +414,10 @@ class EventDetector:
             return self.detect_price_falls_by(event)
         elif event_type == EventType.VOLUME_SPIKE:
             return self.detect_volume_spike(event)
+        elif event_type == EventType.PIVOT_DEVIATION:
+            return self.detect_pivot_deviation(event)
+        elif event_type == EventType.PIVOT_RETURN:
+            return self.detect_pivot_return(event)
         else:
             logger.warning(f"Event type {event_type} not implemented yet")
             return []

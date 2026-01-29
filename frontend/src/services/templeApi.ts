@@ -72,7 +72,8 @@ class TempleApiService {
   }
 
   async getExamplePatterns(): Promise<PatternDefinition[]> {
-    return this.request(`${API_PREFIX}/patterns/examples`);
+    const response = await this.request<{ patterns: PatternDefinition[] }>(`${API_PREFIX}/patterns/examples`);
+    return response.patterns;
   }
 
   // Scanner Endpoints

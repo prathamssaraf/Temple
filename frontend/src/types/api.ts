@@ -39,6 +39,15 @@ export interface PatternMatchRequest {
   lookback_days: number;
 }
 
+export interface PricePoint {
+  date: string;
+  close: number;
+  open: number;
+  high: number;
+  low: number;
+  volume: number;
+}
+
 export interface PatternMatchResponse {
   symbol: string;
   pattern_name: string;
@@ -48,6 +57,7 @@ export interface PatternMatchResponse {
   occurrence_details: OccurrenceDetail[];
   timeframe_start: string;
   timeframe_end: string;
+  price_data?: PricePoint[];
 }
 
 // Scanner Types
@@ -57,6 +67,7 @@ export interface ScanRequest {
   pattern: PatternDefinition;
   min_confidence: number;
   parallel: boolean;
+  lookback_days?: number;
 }
 
 export interface ScanResultItem {
